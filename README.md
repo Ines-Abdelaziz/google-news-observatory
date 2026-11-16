@@ -55,8 +55,9 @@ From these we count, for every outlet:
   story, so "appearances" means appearing among those shown.
 - **Outlet names come from Google.** Names that share a website are merged; aggregators that
   republish other outlets' articles are counted as outlets.
-- **Labels and text analyses are approximate.** Outlet types and countries cover the most
-  frequent outlets; keywords, names and countries come from simple text rules; event matching
+- **Labels and text analyses are approximate.** Outlet types and countries come from a list of
+  known outlets and simple rules; political leaning exists only for the US edition (AllSides and
+  partisan audience scores, 2018); keywords, names and countries come from simple text rules; event matching
   uses a multilingual language model and can link or miss stories.
 - **Collection gaps.** Some days are missing, mostly in the European editions. The site
   shows them.
@@ -66,7 +67,8 @@ From these we count, for every outlet:
 ## Data availability
 
 Raw data is not published in this repository. The aggregated results shown on the site are in
-[`site/public/data/`](site/public/data/) as JSON files.
+[`site/public/data/`](site/public/data/) as JSON files, and the full list of news sources seen in
+each edition, with their labels, is in `site/public/data/all_outlets.csv`.
 
 Researchers who want access to the underlying story-level data can contact us (see below).
 

@@ -33,7 +33,9 @@ FILE_RE = re.compile(r"^headlines_(2026-\d{2}-\d{2})\.csv$")
 # Google News separates headline and outlet with two (non-breaking) spaces
 SEP_RE = re.compile(r"(?:[ \t]|\xa0){2,}")
 TAILS = defaultdict(int)  # trailing "full coverage" phrases found, for the report
-LAST_TAIL = [""]          # the phrase found in the cluster parsed last (kept per story)
+LAST_TAIL = [""]  # the phrase found in the cluster parsed last (kept per story)
+# Google's "full coverage" link glued to the last outlet ends with the product name in the edition's language
+LINK_RE = re.compile(r"(Google News|Google Actualités|Știri Google|Google Nachrichten)\s*$")
 
 
 def list_files(root):
@@ -114,7 +116,7 @@ def parse_cluster(desc, known, lengths):
             items.append((headline, "", "failed"))
             headline = mid
     last = parts[-1]
-    if "Google" in last:
+    if LINK_RE.search(last):
         # a "View Full Coverage on Google News" link is glued to the last outlet,
         # e.g. 'RFIVoir la couverture complète sur Google Actualités'
         outlet = match_known(last, known, lengths)
@@ -154,7 +156,7 @@ def main(root, out):
     known = set(stories["publisher_name"].str.strip()) - {""}
     for d in stories["description"]:
         parts = split_parts(d)
-        if len(parts) >= 2 and "Google" not in parts[-1]:
+        if len(parts) >= 2 and not LINK_RE.search(parts[-1]):
             known.add(parts[-1])  # the last part is a bare outlet name (unless a Google link is glued on)
     lengths = sorted({len(n) for n in known}, reverse=True)
     print(f"{len(stories)} stories, {len(known)} outlet names learned")

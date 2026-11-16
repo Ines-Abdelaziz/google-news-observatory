@@ -2,6 +2,12 @@ import { Heatmap, StackedBars } from '../components/Plots';
 import { Card, Table, WithData } from '../components/Ui';
 import { COUNTRIES, Row, int, pct, pivot, toShares, useData } from '../data';
 
+function topShared(rows: Row[]) {
+  const c = new Map<string, number>();
+  for (const r of rows) if (r.shared_lead_outlet) c.set(r.shared_lead_outlet, (c.get(r.shared_lead_outlet) ?? 0) + 1);
+  return [...c.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([o, n]) => `${o} ${n}`).join(', ');
+}
+
 export default function Compare() {
   const sim = useData('world_edition_similarity');
   const across = useData('world_outlets_across_editions');
@@ -49,8 +55,9 @@ export default function Compare() {
           return <StackedBars data={toShares(ordered, keys)} keys={keys} />;
         }}</WithData>
         <WithData d={evOrigin}>{(rows) => (
-          <p className="note">Of {int(rows.length)} events covered by all four editions, the same outlet leads everywhere in{' '}
-            {pct(rows.filter((r) => r.same_outlet_everywhere).length / (rows.length || 1))} of them.</p>
+          <p className="note">Of {int(rows.length)} events covered by at least two editions, the same outlet is credited in two or more editions for{' '}
+            {pct(rows.filter((r) => r.shared_lead_outlet).length / (rows.length || 1))} of them
+            {rows.some((r) => r.shared_lead_outlet) && <> (most often: {topShared(rows)})</>}.</p>
         )}</WithData>
       </Card>
       <Card title="Events covered by the most editions" sub="Each edition's lead headline and outlet for the same event.">

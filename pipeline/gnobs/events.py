@@ -14,7 +14,7 @@ grouped into events (connected components).
 Writes:
   event_coverage.json     per edition: share of its stories whose event is covered by 1, 2, 3 or 4 editions
   shared_events.json      the events covered by the most editions, with each edition's lead headline and outlet
-  event_lead_origin.json  for events covered by all four editions: did each edition credit the same outlet?
+  event_lead_origin.json  for events covered by 2+ editions: is the same outlet credited in several editions?
 """
 import argparse
 import json
@@ -117,12 +117,14 @@ def run(tables, out, model, threshold, categories, embedder=None):
         shared.append({"event": int(e["event"]), "editions": int(e["editions"]), "stories": int(e["stories"]),
                        "first_date": e["first_day"], "by_edition": per})
 
-    full = s[s["editions"] == len(EDITIONS)]
+    # events covered by 2+ editions: is the same outlet credited in several editions?
+    multi = s[s["editions"] >= 2]
     origin = []
-    for eid, g in full.groupby("event"):
+    for eid, g in multi.groupby("event"):
         lead = g.groupby("country")["publisher_name"].agg(lambda x: x.value_counts().index[0])
-        origin.append({"event": int(eid), "distinct_lead_outlets": int(lead.nunique()),
-                       "same_outlet_everywhere": bool(lead.nunique() == 1)})
+        counts = lead.value_counts()
+        origin.append({"event": int(eid), "editions": int(lead.size), "distinct_lead_outlets": int(lead.nunique()),
+                       "shared_lead_outlet": counts.index[0] if counts.iloc[0] >= 2 else None})
 
     out.mkdir(parents=True, exist_ok=True)
     for name, rows in [("event_coverage", cov.to_dict("records")), ("shared_events", shared),

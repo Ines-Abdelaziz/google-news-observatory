@@ -18,3 +18,7 @@ site/dist/
 
 # outlet labels are code, not data
 !pipeline/labels/*.csv
+
+# downloaded reference lists
+pipeline/labels/external/
+!site/public/data/*.csv

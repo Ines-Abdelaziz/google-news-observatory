@@ -1,5 +1,7 @@
-outlet,outlet_country,outlet_type,note
+outlet,outlet_country,outlet_type,leaning,leaning_source,note
 # One row per outlet name as Google writes it. Leave a field empty to keep the automatic value.
-# outlet_country: ISO code (US, FR, DE, RO, GB, ...). outlet_type: public service, state-controlled, wire agency, aggregator, commercial, other
+# outlet_country: ISO code (US, FR, DE, RO, GB, ...)
+# outlet_type: public service, state-controlled, wire agency, aggregator, official, private
+# leaning: left, lean left, center, lean right, right   (always say where it comes from in leaning_source)
 # Example:
-# Euronews,FR,commercial,headquartered in Lyon
+# Euronews,FR,private,,,headquartered in Lyon

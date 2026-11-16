@@ -3,7 +3,8 @@ import { Bars, HBars, Lines, Network, StackedBars } from '../components/Plots';
 import { Card, CategoryPicker, EditionPicker, Table, WithData } from '../components/Ui';
 import { COUNTRIES, Row, dayLabel, int, monthLabel, pct, pivot, toShares, useData } from '../data';
 
-const TYPES = ['commercial', 'public service', 'wire agency', 'aggregator', 'state-controlled', 'other'];
+const TYPES = ['private', 'public service', 'wire agency', 'aggregator', 'official', 'state-controlled'];
+const LEANINGS = ['left', 'lean left', 'center', 'lean right', 'right', 'unknown'];
 const ORIGINS = ['domestic', 'foreign', 'unknown'];
 
 function mixRows(rows: Row[], cat: string, key: string, keys: string[], measure: 'leads' | 'appearances') {
@@ -21,6 +22,7 @@ export default function Outlets() {
   const nodes = useData('coappearance_nodes');
   const edges = useData('coappearance_edges');
   const cover = useData('label_coverage');
+  const leaning = useData('leaning_mix');
   const [cat, setCat] = useState('All');
   const [ed, setEd] = useState('United States');
   return (
@@ -40,7 +42,7 @@ export default function Outlets() {
           <Bars data={pivot(rows, 'month', 'country', 'new_outlets')} keys={[...COUNTRIES]} xFormat={monthLabel} />
         )}</WithData>
       </Card>
-      <Card title="What kind of outlets lead?" sub={<>Share of leads by outlet type. Types come from a list of known outlets plus manual labels; “other” is not labelled yet.</>}>
+      <Card title="What kind of outlets lead?" sub={<>Share of leads by outlet type. Outlets not on the list of known outlets count as private (see Data &amp; methods).</>}>
         <CategoryPicker value={cat} onChange={setCat} withAll />
         <WithData d={types}>{(rows) => <StackedBars data={mixRows(rows, cat, 'outlet_type', TYPES, 'leads')} keys={TYPES} />}</WithData>
       </Card>
@@ -48,8 +50,18 @@ export default function Outlets() {
         <CategoryPicker value={cat} onChange={setCat} withAll />
         <WithData d={origin}>{(rows) => <StackedBars data={mixRows(rows, cat, 'origin', ORIGINS, 'leads')} keys={ORIGINS} />}</WithData>
         <WithData d={cover}>{(rows) => (
-          <p className="note">Labelled share of leads: {rows.map((r) => `${r.country} ${pct(r.leads_with_type)} (type), ${pct(r.leads_with_country)} (country)`).join(' · ')}</p>
+          <p className="note">Share of leads whose outlet country is known: {rows.map((r) => `${r.country} ${pct(r.leads_with_country)}`).join(' · ')}</p>
         )}</WithData>
+      </Card>
+      <Card title="Political leaning of the outlets that lead (US edition)"
+        sub={<>Share of US leads by the outlet's leaning: AllSides Media Bias Ratings where available, otherwise the partisan audience score of Robertson et al. (2018), both from 2018. These ratings describe US politics; the European editions have no comparable open ratings yet. Audience scores describe who shares an outlet, not its editorial line.</>}>
+        <WithData d={leaning}>{(rows) => {
+          const us = rows.filter((r) => r.country === 'United States');
+          const p = pivot(us, 'category', 'leaning', 'leads');
+          const order = ['All', 'Politics', 'Nation', 'World', 'Business', 'Health', 'Science', 'Technology'];
+          const ordered = order.map((c) => p.find((r) => r.x === c)).filter(Boolean) as Row[];
+          return <StackedBars data={toShares(ordered, LEANINGS)} keys={LEANINGS} />;
+        }}</WithData>
       </Card>
       <Card title="State-controlled media" sub="Outlets owned or directed by a government (outside public-service governance) seen in each edition.">
         <WithData d={state}>{(rows) => (

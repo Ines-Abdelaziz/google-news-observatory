@@ -1,12 +1,33 @@
 -- Aggregates that need outlet labels (table outlet_labels, built by gnobs/labels.py).
 
--- how much of each edition's lead slot is labelled (label quality)
+-- how much of each edition's lead slot is labelled, and how (label quality)
 CREATE TABLE label_coverage AS
 SELECT s.country,
-       round(sum(s.leads) FILTER (WHERE l.origin <> 'unknown') / sum(s.leads), 4)   AS leads_with_country,
-       round(sum(s.leads) FILTER (WHERE l.outlet_type <> 'other') / sum(s.leads), 4) AS leads_with_type
+       round(sum(s.leads) FILTER (WHERE l.origin <> 'unknown') / sum(s.leads), 4)                 AS leads_with_country,
+       round(sum(s.leads) FILTER (WHERE l.country_source IN ('manual', 'known')) / sum(s.leads), 4) AS leads_country_checked,
+       round(sum(s.leads) FILTER (WHERE l.type_source IN ('manual', 'known')) / sum(s.leads), 4)    AS leads_type_checked,
+       round(coalesce(sum(s.leads) FILTER (WHERE l.leaning <> 'unknown'), 0) / sum(s.leads), 4)   AS leads_with_leaning
 FROM sources s JOIN outlet_labels l USING (country, outlet)
 GROUP BY s.country ORDER BY s.country;
+
+-- political leaning of the outlets leading each edition (where a rating exists)
+CREATE TABLE leaning_mix AS
+WITH b AS (
+    SELECT c.country, c.category, l.leaning, c.appearances, c.leads
+    FROM sources_by_category c JOIN outlet_labels l USING (country, outlet)
+)
+SELECT country, category, leaning, sum(appearances) AS appearances, sum(leads) AS leads FROM b GROUP BY ALL
+UNION ALL
+SELECT country, 'All', leaning, sum(appearances), sum(leads) FROM b GROUP BY country, leaning
+ORDER BY country, category, leaning;
+
+-- every outlet seen, with its labels (published as a downloadable CSV)
+CREATE TABLE all_outlets AS
+SELECT s.country AS edition, s.outlet, l.domain, l.outlet_country, l.country_source, l.outlet_type, l.type_source,
+       l.origin, l.leaning, l.leaning_source, s.appearances, s.leads, s.lead_rate, s.fair_lead_rate,
+       s.first_seen, s.last_seen
+FROM sources s JOIN outlet_labels l USING (country, outlet)
+ORDER BY s.country, s.appearances DESC;
 
 -- domestic vs foreign outlets, per section (and All)
 CREATE TABLE origin_mix AS
@@ -74,7 +95,8 @@ ORDER BY 1, 2;
 
 -- top outlets with their labels, to check and correct (written as CSV, not shown on the site)
 CREATE TABLE labels_review AS
-SELECT s.country, s.outlet, l.domain, l.outlet_country, l.outlet_type, l.origin, s.appearances, s.leads
+SELECT s.country, s.outlet, l.domain, l.outlet_country, l.country_source, l.outlet_type, l.type_source,
+       l.origin, l.leaning, l.leaning_source, s.appearances, s.leads
 FROM sources s JOIN outlet_labels l USING (country, outlet)
 QUALIFY row_number() OVER (PARTITION BY s.country ORDER BY s.appearances DESC) <= 300
 ORDER BY s.country, s.appearances DESC;

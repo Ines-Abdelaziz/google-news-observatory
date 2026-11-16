@@ -43,13 +43,20 @@ Check after each run:
 
 ## Outlet labels
 
-`pipeline/gnobs/labels.py` labels each outlet with a country and a type, in this order:
-1. `pipeline/labels/outlet_labels.csv` (manual, wins over everything),
-2. the list of known outlets in `labels.py` (by website),
-3. the website's country code (.fr, .de, .ro, .co.uk…) for the country only.
+`pipeline/gnobs/labels.py` gives every outlet a country, a type and (US edition) a political
+leaning, and records where each label comes from (see the docstring at the top of the file):
 
-Types: commercial, public service, wire agency, aggregator, state-controlled, other (= not labelled).
-The site shows how much of each edition's lead slot is labelled (Data & methods tab).
+- **Country:** manual → known-outlet list (`KNOWN`) → country-code domain → US news-site lists
+  (Robertson et al., downloaded once into `pipeline/labels/external/`) → edition (for .com sites seen
+  only in the FR, DE or RO edition) → unknown.
+- **Type:** manual → known-outlet list → name patterns (Yahoo, AP…) → `private` by default.
+- **Leaning (US edition only):** manual → AllSides 2018 → partisan audience score (Robertson et al. 2018).
+  For the European editions, add ratings by hand in `pipeline/labels/outlet_labels.csv`
+  (columns `leaning` and `leaning_source`), e.g. from the European Media Systems Survey.
+
+To correct anything, add a row to `pipeline/labels/outlet_labels.csv` and rerun step 2.
+`out_news_tables/labels_review.csv` lists the 300 most frequent outlets per edition with every
+label and its source. `site/public/data/all_outlets.csv` is the full public list of news sources.
 
 ## Test without the real data
 

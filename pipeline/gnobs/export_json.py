@@ -33,8 +33,14 @@ WITH named AS (
            count(*) AS n
     FROM stories WHERE lead_outlet <> '' AND coalesce(lead_website, '') <> ''
     GROUP BY ALL
+), domain_names AS (   -- outlets Google names by their domain, e.g. 'aa.com.tr'
+    SELECT DISTINCT split_part(i.story_id, '|', 1) AS country, i.outlet,
+           regexp_replace(lower(i.outlet), '^(www[0-9]?|m|amp)[.]', '') AS dom, 0 AS n
+    FROM cluster_items i
+    WHERE regexp_full_match(lower(i.outlet), '[a-z0-9.-]+[.][a-z]{{2,}}')
 ), per_name AS (
-    SELECT country, outlet, arg_max(dom, n) AS dom, sum(n) AS n FROM named GROUP BY ALL
+    SELECT country, outlet, arg_max(dom, n) AS dom, sum(n) AS n
+    FROM (SELECT * FROM named UNION ALL SELECT * FROM domain_names) GROUP BY ALL
 ), canon AS (
     SELECT country, dom, arg_max(outlet, n) AS canonical, count(*) AS names FROM per_name GROUP BY ALL
 )
@@ -45,7 +51,7 @@ WHERE c.names > 1 AND p.outlet <> c.canonical AND p.dom NOT IN ({shared})
 # folder name, label shown on the site, order, time zone of the edition
 EDITIONS = [("US", "United States", 1, "America/New_York"), ("FR", "France", 2, "Europe/Paris"),
             ("Germany", "Germany", 3, "Europe/Berlin"), ("Romania", "Romania", 4, "Europe/Bucharest")]
-LABEL_EXPORT = ["label_coverage", "origin_mix", "type_mix", "state_media",
+LABEL_EXPORT = ["label_coverage", "origin_mix", "type_mix", "leaning_mix", "state_media",
                 "world_outlets_across_editions", "world_edition_similarity"]
 EXPORT = [
     # lead slot
@@ -109,7 +115,7 @@ def main():
         con.execute(f"COPY outlet_alias TO '{t / 'outlet_aliases.csv'}' (HEADER)")
         print(f"merged {n} outlet names into the main name of their website (see {t / 'outlet_aliases.csv'})")
 
-    for name in EXPORT + LABEL_EXPORT + ["sources", "sources_by_category", "labels_review", "outlet_labels"]:
+    for name in EXPORT + LABEL_EXPORT + ["sources", "sources_by_category", "labels_review", "outlet_labels", "all_outlets"]:
         con.execute(f"DROP TABLE IF EXISTS {name}")
     con.execute("DROP MACRO IF EXISTS headline_features")
     con.execute(SQL.read_text())
@@ -118,6 +124,8 @@ def main():
     n = build_label_table(con)
     con.execute(LABELS_SQL.read_text())
     con.execute(f"COPY labels_review TO '{t / 'labels_review.csv'}' (HEADER)")
+    con.execute(f"COPY all_outlets TO '{out / 'all_outlets.csv'}' (HEADER)")
+    print(f"wrote the full list of news sources to {out / 'all_outlets.csv'}")
     print(f"labelled {n} outlets; check the top ones in {t / 'labels_review.csv'}")
 
     for name in EXPORT + LABEL_EXPORT:
