@@ -1,65 +1,97 @@
 # Google News Lead Slot Observatory
 
-Who does Google News put on top when several outlets cover the same story?
-This repo audits the lead slot of Google News story cards in four country editions
-(United States, France, Germany, Romania) and seven categories
-(Business, Health, Nation, Politics, Science, Technology, World).
+**Who does Google News put on top?**
 
-```
-carrot:  daily CSVs ──► build_tables (pandas) ──► export_json (DuckDB) ──► site/public/data/*.json
-                                                                                  │  git push
-                                                                     GitHub Pages: static React site
-```
+When several outlets cover the same story, Google News groups their articles into a single
+story card. It shows one article as the **lead**, the large one on top, and a few others
+underneath. That choice decides which outlet gets the reader's attention, and the traffic.
 
-| Folder | What it is |
-|---|---|
-| `pipeline/gnobs/build_tables.py` | Parses the daily Google News CSVs: one row per story, one row per article in each story card, coverage per day |
-| `pipeline/sql/aggregates.sql` | The aggregates the site shows, in DuckDB SQL |
-| `pipeline/gnobs/export_json.py` | Runs the SQL with DuckDB and writes the JSON files into the site |
-| `site/` | The dashboard: React + Vite + Recharts, fully static |
+This observatory tracks that choice every day in four country editions of Google News:
+**United States, France, Germany and Romania**. It covers seven sections: World, Nation,
+Politics, Business, Technology, Science and Health.
 
-Raw data never goes in the repo (see `.gitignore`); only the small aggregate JSON in `site/public/data/` does.
+🔗 **Live site:** _coming soon_
 
-## Update the data (on carrot)
+---
 
-```bash
-cd pipeline
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+## What it shows
 
-# 1. parse the daily CSVs (a few minutes)
-python -m gnobs.build_tables ../../data/daily_news_csv ../out_news_tables
-cat ../out_news_tables/parse_report.txt
+- **Concentration of the lead slot.** How much of it goes to a few outlets in each edition,
+  and how this changes month by month.
+- **Most-credited outlets.** Which outlets lead most often, overall and in each section.
+- **Lead rate.** How often an outlet is put on top when it appears in a story card. This
+  separates Google's preference from how much an outlet publishes.
+- **Differences between editions and sections.** For example, whether political news is more
+  concentrated in one country than another.
 
-# 2. compute the aggregates and write the site's JSON (keep a DuckDB file for your own queries)
-python -m gnobs.export_json ../out_news_tables ../site/public/data --db ../out_news_tables/observatory.duckdb
+## How the data is collected
 
-# 3. publish
-cd .. && git add site/public/data && git commit -m "Update data" && git push
-```
+Every day, we collect the stories in the public, non-personalized Google News topic feeds of
+each edition. Each story card gives us:
 
-`build_tables` reads only the FR, Germany, Romania and US folders, the 7 category folders and
-2026 files. `parse_report.txt` says how well the story cards were split into outlets.
+- the **lead article**: its headline, outlet, link and publication time
+- the **related articles** Google shows underneath it, usually up to four, from other outlets
 
-To explore the data yourself: `duckdb out_news_tables/observatory.duckdb`, then query the tables
-`stories`, `cluster_items`, `coverage`, `sources`, `sources_by_category`, and the exported ones.
+From these we count, for every outlet:
 
-## Run the site
+- **Leads:** how many stories it led
+- **Appearances:** how many story cards it appeared in, as lead or underneath
+- **Lead rate:** leads ÷ appearances
+- **Fair lead rate:** the same, counting only stories with at least two outlets. In a
+  single-article story the only outlet leads by default, so this is where Google really
+  makes a choice.
+
+## Limitations
+
+- **Editorial supply, not exposure.** The feeds are non-personalized and collected once a
+  day. They show Google's editorial choices for each edition, not what any individual reader
+  saw.
+- **Clusters are partial.** A story card shows only a few of the outlets that covered the
+  story, so "appearances" means appearing among those shown.
+- **Outlet names come from Google.** The same outlet can appear under slightly different
+  names, and aggregators that republish other outlets' articles are counted as outlets.
+- **Collection gaps.** Some days are missing, mostly in the European editions. The site
+  shows them.
+- **Coverage starts at different dates.** The US edition starts in January 2026, the
+  European editions in March 2026.
+
+## Data availability
+
+Raw data is not published in this repository. The aggregated results shown on the site are in
+[`site/public/data/`](site/public/data/) as JSON files.
+
+Researchers who want access to the underlying story-level data can contact us (see below).
+
+## Repository structure
+
+| Folder      | Contents                                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pipeline/` | Python code that parses the daily feeds into tables (`build_tables.py`), and the SQL aggregates computed with DuckDB (`sql/aggregates.sql`, `export_json.py`) |
+| `site/`     | The website: a static React + Vite app that reads the JSON files                                                                                              |
+| `docs/`     | Notes for maintainers                                                                                                                                         |
+
+To rebuild the site locally:
 
 ```bash
 cd site
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # static files in site/dist
+npm run dev
 ```
 
-GitHub Pages: in the repository settings, enable Pages with source "GitHub Actions".
-`.github/workflows/deploy-site.yml` publishes on every push to `main` that touches `site/`.
+## Team
 
-## Notes on the data
+Ines Abdelaziz, Inria and Institut Polytechnique de Paris.
 
-- Each story is one card from a non-personalized Google News topic feed, collected once a day:
-  one lead article plus up to four related articles from other outlets.
-- Lead rate = leads ÷ appearances. Single-article stories have only one outlet, which leads by
-  default, so the **fair lead rate** counts only stories with at least two outlets.
-- Outlet names are as Google writes them; variants of one outlet are not merged yet.
+## How to cite
+
+_Citation to be added._
+
+## License
+
+_To be decided._
+
+## Contact
+
+Ines Abdelaziz, [@Ines-Abdelaziz](https://github.com/Ines-Abdelaziz). Questions, corrections
+and requests from outlets or researchers are welcome through
+[GitHub issues](https://github.com/Ines-Abdelaziz/google-news-observatory/issues).
