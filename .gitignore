@@ -1,6 +1,6 @@
 # data never goes in the repo
-data/
-out_news_tables/
+/data/
+/out_news_tables/
 *.csv
 *.csv.gz
 *.zip
