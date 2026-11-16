@@ -1,2 +1,7 @@
 pandas>=2.0
 duckdb>=1.0
+# text analyses (gnobs.text_analyses)
+babel>=2.12
+stopwordsiso>=0.6
+# cross-edition event matching (gnobs.events), optional and heavier:
+# sentence-transformers>=3.0

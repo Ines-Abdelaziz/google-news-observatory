@@ -16,13 +16,18 @@ Politics, Business, Technology, Science and Health.
 
 ## What it shows
 
-- **Concentration of the lead slot.** How much of it goes to a few outlets in each edition,
-  and how this changes month by month.
-- **Most-credited outlets.** Which outlets lead most often, overall and in each section.
-- **Lead rate.** How often an outlet is put on top when it appears in a story card. This
-  separates Google's preference from how much an outlet publishes.
-- **Differences between editions and sections.** For example, whether political news is more
-  concentrated in one country than another.
+- **Lead slot.** How concentrated it is in each edition and section, which outlets lead most
+  often, their lead rate, who gets the first positions of the feed, and whether lead headlines
+  differ from the others.
+- **Outlets.** How many outlets make it into the feeds, new outlets each month, outlet types
+  (public service, commercial, wire agencies, aggregators, state-controlled media), domestic vs
+  foreign outlets, which outlets appear together, and a profile for each major outlet.
+- **Agenda.** The mix of sections over time, the words, names and countries that stand out,
+  how long stories stay, and stories filed in several sections.
+- **Timing.** When lead articles are published and how fresh they are.
+- **Feed design.** The size of story cards over time, and changes in how Google presents them.
+- **Compare editions.** How alike the editions are in who leads World news, outlets leading in
+  several editions, and the same events covered across editions.
 
 ## How the data is collected
 
@@ -48,8 +53,11 @@ From these we count, for every outlet:
   saw.
 - **Clusters are partial.** A story card shows only a few of the outlets that covered the
   story, so "appearances" means appearing among those shown.
-- **Outlet names come from Google.** The same outlet can appear under slightly different
-  names, and aggregators that republish other outlets' articles are counted as outlets.
+- **Outlet names come from Google.** Names that share a website are merged; aggregators that
+  republish other outlets' articles are counted as outlets.
+- **Labels and text analyses are approximate.** Outlet types and countries cover the most
+  frequent outlets; keywords, names and countries come from simple text rules; event matching
+  uses a multilingual language model and can link or miss stories.
 - **Collection gaps.** Some days are missing, mostly in the European editions. The site
   shows them.
 - **Coverage starts at different dates.** The US edition starts in January 2026, the
@@ -64,11 +72,11 @@ Researchers who want access to the underlying story-level data can contact us (s
 
 ## Repository structure
 
-| Folder      | Contents                                                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pipeline/` | Python code that parses the daily feeds into tables (`build_tables.py`), and the SQL aggregates computed with DuckDB (`sql/aggregates.sql`, `export_json.py`) |
-| `site/`     | The website: a static React + Vite app that reads the JSON files                                                                                              |
-| `docs/`     | Notes for maintainers                                                                                                                                         |
+| Folder | Contents |
+|---|---|
+| `pipeline/` | Python code that parses the daily feeds into tables (`build_tables.py`), the SQL aggregates computed with DuckDB (`sql/`, `export_json.py`), outlet labels (`labels.py`, `labels/`), headline text analyses (`text_analyses.py`) and cross-edition event matching (`events.py`) |
+| `site/` | The website: a static React + Vite app that reads the JSON files |
+| `docs/` | Notes for maintainers |
 
 To rebuild the site locally:
 

@@ -33,6 +33,7 @@ FILE_RE = re.compile(r"^headlines_(2026-\d{2}-\d{2})\.csv$")
 # Google News separates headline and outlet with two (non-breaking) spaces
 SEP_RE = re.compile(r"(?:[ \t]|\xa0){2,}")
 TAILS = defaultdict(int)  # trailing "full coverage" phrases found, for the report
+LAST_TAIL = [""]          # the phrase found in the cluster parsed last (kept per story)
 
 
 def list_files(root):
@@ -122,7 +123,9 @@ def parse_cluster(desc, known, lengths):
         else:
             cut = heuristic_split(last)
             items.append((headline, cut[0], "heuristic") if cut else (headline, "", "failed"))
-        TAILS[last[len(items[-1][1]):].strip()] += 1
+        tail = last[len(items[-1][1]):].strip()
+        TAILS[tail] += 1
+        LAST_TAIL[0] = tail
     else:
         items.append((headline, last, "known"))
     return items
@@ -159,12 +162,14 @@ def main(root, out):
     # ---- pass 2: parse clusters ------------------------------------------
     stories["story_id"] = (stories["country"] + "|" + stories["topic_folder"] + "|"
                            + stories["file_date"] + "|" + stories["rank_in_file"].astype(str))
-    rows, how_counts, checks = [], defaultdict(int), defaultdict(int)
+    rows, how_counts, checks, tails = [], defaultdict(int), defaultdict(int), []
     for k, (sid, title, pub, desc) in enumerate(zip(stories["story_id"], stories["title"],
                                      stories["publisher_name"], stories["description"])):
         if k % 50000 == 0:
             print(f"  parsed {k}/{len(stories)} stories", flush=True)
+        LAST_TAIL[0] = ""
         items = parse_cluster(desc, known, lengths)
+        tails.append(LAST_TAIL[0])
         checks["title_is_first"] += bool(items) and str(desc).strip().startswith(str(title).strip())
         checks["lead_outlet_matches"] += bool(items) and items[0][1] == str(pub).strip()
         for pos, (h, o, how) in enumerate(items):
@@ -172,9 +177,10 @@ def main(root, out):
             how_counts[how] += 1
     items = pd.DataFrame(rows)
     stories["cluster_size"] = stories["story_id"].map(items.groupby("story_id").size()).fillna(0).astype(int)
+    stories["link_phrase"] = tails  # Google's "full coverage" link wording, if any (tracks design changes)
 
     keep = ["story_id", "country", "topic_folder", "topic", "file_date", "rank_in_file", "title",
-            "publisher_name", "publisher_website", "published_date", "url", "cluster_size"]
+            "publisher_name", "publisher_website", "published_date", "url", "cluster_size", "link_phrase"]
     stories[[c for c in keep if c in stories.columns]].to_csv(
         os.path.join(out, "stories.csv.gz"), index=False, compression="gzip")
     items.to_csv(os.path.join(out, "cluster_items.csv.gz"), index=False, compression="gzip")
