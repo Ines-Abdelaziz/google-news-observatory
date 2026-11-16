@@ -13,3 +13,4 @@ __pycache__/
 # node
 node_modules/
 site/dist/
+*.tsbuildinfo
