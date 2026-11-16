@@ -1,6 +1,6 @@
 # Builds the React site and publishes it on GitHub Pages.
-# Set the repository variable API_URL (Settings > Secrets and variables > Actions > Variables)
-# to your alwaysdata API address, and enable Pages with source "GitHub Actions".
+# The data is the JSON in site/public/data (written on carrot by pipeline/gnobs/export_json.py).
+# Enable Pages with source "GitHub Actions" in the repository settings.
 name: Deploy site
 on:
   push:
@@ -21,7 +21,6 @@ jobs:
         with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
       - run: npm ci
       - run: npm run build
-        env: { VITE_API_URL: "${{ vars.API_URL }}" }
       - uses: actions/upload-pages-artifact@v3
         with: { path: site/dist }
   deploy:

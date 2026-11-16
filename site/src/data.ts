@@ -19,14 +19,11 @@ export type OutletRow = {
 };
 export type DayRow = { country: string; date: string; stories: number };
 
-/** API base URL, set at build time: VITE_API_URL=https://your-api.alwaysdata.net */
-const API = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
-
-/** Load one dataset from the API (GET /api/<name>). */
+/** Load one dataset: public/data/<name>.json, written by pipeline/gnobs/export_json.py */
 export function useData<T>(name: string): T | null {
   const [data, setData] = useState<T | null>(null);
   useEffect(() => {
-    fetch(`${API}/api/${name}`)
+    fetch(`${import.meta.env.BASE_URL}data/${name}.json`)
       .then((r) => r.json())
       .then(setData)
       .catch((e) => console.error(`failed to load ${name}`, e));

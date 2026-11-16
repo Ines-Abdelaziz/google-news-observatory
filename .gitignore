@@ -4,6 +4,7 @@ out_news_tables/
 *.csv
 *.csv.gz
 *.zip
+*.duckdb
 # secrets
 .env
 *.env.local

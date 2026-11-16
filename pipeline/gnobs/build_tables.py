@@ -3,7 +3,7 @@
 Build analysis tables from the daily Google News CSVs.
 
 Usage (from the videos_discoveryy folder):
-    python -m gnobs.build_tables data/daily_news_csv out_news_tables
+    python -m gnobs.build_tables ../../data/daily_news_csv ../out_news_tables
 
 Reads only: countries FR, Germany, Romania, US
             topics Business, Health, Nation, Politics, Science, Technology, World
