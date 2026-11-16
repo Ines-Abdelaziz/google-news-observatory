@@ -1,0 +1,15 @@
+# data never goes in the repo
+data/
+out_news_tables/
+*.csv
+*.csv.gz
+*.zip
+# secrets
+.env
+*.env.local
+# python
+__pycache__/
+.venv/
+# node
+node_modules/
+site/dist/

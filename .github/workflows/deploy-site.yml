@@ -1,0 +1,32 @@
+# Builds the React site and publishes it on GitHub Pages.
+# Set the repository variable API_URL (Settings > Secrets and variables > Actions > Variables)
+# to your alwaysdata API address, and enable Pages with source "GitHub Actions".
+name: Deploy site
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/deploy-site.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+      - run: npm ci
+      - run: npm run build
+        env: { VITE_API_URL: "${{ vars.API_URL }}" }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site/dist }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: { name: github-pages }
+    steps:
+      - uses: actions/deploy-pages@v4
